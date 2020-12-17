@@ -1,0 +1,165 @@
+/* Copyright (c) 2017 MIT 6.813/6.831 course staff, all rights reserved.
+ * Redistribution of original or derived work requires permission of course staff.
+ */
+
+/* REMOVE ME - dashed lines and height for debugging */
+#mainColumn {
+    width: 320px;
+    height: 320px;
+    margin: auto;
+}
+
+#firstColumn {
+    width: 320px;
+    height: 320px;
+    text-align: center;
+    padding: 80px;
+    margin: auto;
+}
+
+#lastColumn {
+    width: 320px;
+    height: 320px;
+    margin: auto;
+    text-align: center;
+}
+
+.candy-red, .candy-green, .candy-orange, .candy-blue, .candy-purple {
+    text-align: center;
+    font-weight: bold;
+    color: white;
+}
+
+.candy-red{
+    background-color: red;
+}
+
+.candy-yellow {
+    background-color: yellow;
+    color: black;
+    text-align: center;
+    font-weight: bold;
+}
+
+.candy-green{
+    background-color: green;
+}
+
+.candy-orange{
+    background-color: orange;
+}
+
+.candy-blue{
+    background-color: blue;
+}
+
+.candy-purple{
+    background-color: purple;
+}
+
+
+/* Candy Crush Label on first column*/
+#title {
+    color: red;
+    font-size: 30px;
+    padding: 0px 40px 10px 40px;
+}
+
+/* new game button on first column*/
+#newGameButton {
+    background-color: pink;
+    font-weight: bold;
+    width: 150px;
+    height: 50px;
+}
+
+/* grid on main column */
+#tableGrid{
+    margin: auto;
+    width: 321px;
+    height: 321px;
+    table-layout: fixed;
+    border-style: solid black;
+}
+
+/* "Move:" move text on last column */
+label {
+    font-size: 30px;
+    clear: both;
+    position: absolute;
+    top: 40px;
+    right: 230px;
+}
+
+/* textfield on last column */
+#MoveText {
+    height: 40px;
+    width: 50px;
+    position: absolute;
+    top: 45px;
+    right: 165px;
+}
+
+/* grid borderlines on main column */
+td {
+    border: 1px solid white;
+}
+
+/* all buttons */
+#newGameButton:hover, #up:hover, #down:hover, #left:hover, #right:hover, #crush:hover{
+    background-color: hotpink;
+}
+
+/* all buttons */
+#newGameButton:active, #up:active, #down:active, #left:active, #right:active, #crush:active {
+    background-color: deeppink;
+}
+
+/* https://www.w3schools.com/css/css_positioning.asp */
+/* up button */
+#up {
+    background-color: pink;
+    height: 40px;
+    width: 50px;
+    position: absolute;
+    top: 115px;
+    right: 215px;
+}
+
+/* down button */
+#down {
+    background-color: pink;
+    height: 40px;
+    width: 50px;
+    position: absolute;
+    bottom: 80px;
+    right: 215px;
+}
+
+/* left button */
+#left {
+    background-color: pink;
+    height: 40px;
+    width: 50px;
+    position: absolute;
+    bottom: 123px;
+    right: 270px;
+}
+
+/* right button */
+#right {
+    background-color: pink;
+    height: 40px;
+    width: 50px;
+    position: absolute;
+    bottom: 123px;
+    right: 160px;
+}
+
+/* crush once button */
+#crush {
+    background-color: pink;
+    position: absolute;
+    bottom: 20px;
+    right: 177px;
+}

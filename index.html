@@ -1,0 +1,358 @@
+﻿<!--
+CandyCrush
+Your Name: Aakash Kotak
+Collaborators: Nobody
+-->
+<!DOCTYPE html>
+<html>
+<!--
+/* Copyright (c) 2017 MIT 6.813/6.831 course staff, all rights reserved.
+ * Redistribution of original or derived work requires permission of course staff.
+ */
+-->
+
+<head>
+<meta charset="utf-8">
+<title>CandyCrush</title>
+
+<!-- Load style sheets -->
+<link rel="stylesheet" href=
+  "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.css">
+
+<link rel="stylesheet" href="mainLayout.css">
+
+<!-- Use mobile-aware viewport -->
+<meta name="viewport" content=
+  "width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!-- Load any supplemental Javascript libraries here -->
+<script src=
+  "https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src=
+  "https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.2/seedrandom.js">
+</script>
+<script src="candy.js"></script>
+<script src="board.js"></script>
+<script src="rules.js"></script>
+
+<script>
+
+// By default, the first board loaded by your page will be the same 
+// each time you load (which is accomplished by "seeding" the random
+// number generator. This makes testing (and grading!) easier!
+Math.seedrandom(0);
+
+
+// A short jQuery extension to read query parameters from the URL.
+$.extend({
+  getUrlVars: function() {
+    var vars = [], pair;
+    var pairs = window.location.search.substr(1).split('&');
+    for (var i = 0; i < pairs.length; i++) {
+      pair = pairs[i].split('=');
+      vars.push(pair[0]);
+      vars[pair[0]] = pair[1] &&
+          decodeURIComponent(pair[1].replace(/\+/g, ' '));
+    }
+    return vars;
+  },
+  getUrlVar: function(name) {
+    return $.getUrlVars()[name];
+  }
+});
+
+// constants
+    var DEFAULT_BOARD_SIZE = 8;
+
+// array holds letters a-h
+var letterArray = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+// data model at global scope for easier debugging
+var board;
+var rules;
+
+// initialize board
+if ($.getUrlVar('size') && $.getUrlVar('size') >= 3) {
+  board = new Board($.getUrlVar('size'));
+} else {
+  board = new Board(DEFAULT_BOARD_SIZE);
+}
+
+// load a rule
+rules = new Rules(board);
+
+// Final initialization entry point: the Javascript code inside this block
+// runs at the end of start-up when the page has finished loading.
+$(document).ready(function()
+{
+    CreateTable();
+    disableArrowKeys()
+    document.getElementById("crush").disabled = true;
+});
+
+
+/* Event Handlers */
+// access the candy object with info.candy
+
+// add a candy to the board
+$(board).on('add', function(e, info)
+{
+    AddCandy(info);
+});
+
+// move a candy on the board
+$(board).on('move', function(e, info)
+{
+    AddCandy(info);
+});
+
+// remove a candy from the board
+$(board).on('remove', function(e, info)
+{
+    RemoveCandy(info);
+});
+
+// move a candy on the board
+$(board).on('scoreUpdate', function(e, info)
+{
+  // Your code here. To be implemented in pset 2.
+});
+
+// Button Events
+$(document).on('click', ".btn", function(evt)
+{
+    var id = evt.target.id;
+
+    // user clicks on "New Game" button
+    if(id == "newGameButton") {
+        board.clear();
+        rules.prepareNewGame();
+    }
+
+    // user clicks on any of the arrow key buttons
+    if (id == "up" || id == "down" || id == "left" || id == "right") {
+        checkValidMove(id);
+        clearText();
+        disableArrowKeys()
+        document.getElementById("crush").disabled = false;
+    }
+
+    // user clicks on the "Crush Once" button
+    if (id == "crush") {
+        crushOnce();
+    }
+});
+
+// keyboard events arrive here
+$(document).on('keydown', function(evt) {
+  // Your code here.
+});
+
+    // generates the 8x8 table, called in ready function to initialize
+    function CreateTable() {
+        $("#tableGrid").empty();
+
+        for (var row = 0; row < DEFAULT_BOARD_SIZE; row++) {
+            var rowElem = document.createElement('tr');
+            $("#tableGrid").append(rowElem);
+            for (var col = 0; col < DEFAULT_BOARD_SIZE; col++) {
+                var colElem = document.createElement('td');
+                rowElem.append(colElem);
+            }
+        }
+        rules.prepareNewGame();
+    }
+
+    // helper function to write the position of a table cell, called in AddCandy()
+    // https://en.wikipedia.org/wiki/List_of_Unicode_characters for finding out which unicode is letter "a" (97)
+    // https://www.w3schools.com/jsref/jsref_fromcharcode.asp
+    function getRowAndCol(row, col) {
+        return (String.fromCharCode(col + 97)) + (row + 1);
+    }
+
+    // adds the position and color of a table cell, called in the add and move event handlers
+    function AddCandy(info) {
+        var candyGrid = document.getElementById('tableGrid');
+        // adds the position onto a cell
+        var cell = candyGrid.rows[info.toRow].cells[info.toCol];
+        cell.innerHTML = getRowAndCol(info.toRow, info.toCol);
+        // adds the color in the cell
+        cell.setAttribute("id", "background-color: " + info.candy.id);
+        // centers the text, bolds text, keeps yellow as black text while rest are white text
+        cell.setAttribute("class", "candy-" + info.candy.toString());
+    }
+
+    // helper function to get the coordinates of a table cell, called in checkValidMove(id) and enableButtons()
+    function getCoordinates(coord) {
+        var coord1 = coord[1] - 1; // row coordinate
+        var coord2 = letterArray.indexOf(coord[0]); // column coordinate
+        return [coord1, coord2];
+    }
+
+    // checks to see if the user input is a valid move, and after user clicks an arrow, swaps the colors if it's valid, called in button event handler
+    // https://www.w3schools.com/jsref/prop_text_value.asp
+    function checkValidMove(id) {
+        var moveInput = document.getElementById("MoveText").value; // user input in textfield
+        var coord = getCoordinates(moveInput); // puts in the user input, gets the coordinates of it in the grid
+        var row = coord[0];
+        var col = coord[1];
+        var candy1 = board.getCandyAt(row, col); // matches the user input with the grid position
+        if (rules.isMoveTypeValid(candy1, id)) {
+            var candy2 = board.getCandyInDirection(candy1, id);
+            board.flipCandies(candy1, candy2);
+        }
+    }
+
+    // disable all arrow key buttons initially and after the user clicks on an arrow key, called in enableButtons() and button event handler
+    // https://www.w3schools.com/jsref/prop_select_disabled.asp
+    function disableArrowKeys() {
+        document.getElementById("up").disabled = true;
+        document.getElementById("down").disabled = true;
+        document.getElementById("right").disabled = true;
+        document.getElementById("left").disabled = true;
+    }
+
+    // enable arrow key buttons depending on what move the user inputs, called in button event handler
+    function enableButtons() {
+        var moveInput = document.getElementById("MoveText").value;
+
+        // the textfield is not empty and it has two characters in it, enable arrow keys that are valid
+        if (moveInput != "" && moveInput.length == 2) {
+            var coord = getCoordinates(moveInput);
+            var row = coord[0];
+            var col = coord[1];
+            var candy = board.getCandyAt(row, col);
+            if (rules.isMoveTypeValid(candy, "up")) {
+                document.getElementById("up").disabled = false;
+            }
+            if (rules.isMoveTypeValid(candy, "down")) {
+                document.getElementById("down").disabled = false;
+            }
+            if (rules.isMoveTypeValid(candy, "right")) {
+                document.getElementById("right").disabled = false;
+            }
+            if (rules.isMoveTypeValid(candy, "left")) {
+                document.getElementById("left").disabled = false;
+            }
+        }
+        // the textfield is empty or there are less than 2 characters in it, disable arrow keys
+        else {
+            disableArrowKeys()
+        }
+    }
+
+    // removes a row of 3 or more candies, called in the button event handler
+    function crushOnce() {
+        // when there are matches on the table, breaks down the first match on the list and breaks down other matches if user clicks on crush once again
+        if (rules.getCandyCrushes().length > 0) {
+            //rules.removeCrushes(rules.getCandyCrushes()); // removes all the chains
+            rules.removeCrushes([rules.getCandyCrushes()[0]]); // removes the first chain on the list
+            setTimeout(function () { rules.moveCandiesDown() }, 500);
+        }
+        // when there are no more matches in the table, disable the crush once button
+        if (rules.getCandyCrushes().length == 0) {
+            document.getElementById("crush").disabled = true;
+        }
+    }
+
+    // after candy is crushed, set the cell empty
+    function RemoveCandy(info) {
+        var candyGrid = document.getElementById('tableGrid');
+        // adds the position onto a cell
+        var cell = candyGrid.rows[info.fromRow].cells[info.fromCol];
+        cell.innerHTML = getRowAndCol(info.fromRow, info.fromCol);
+        // set the cell empty after there is no candy in that row
+        cell.setAttribute("style", "");
+    }
+
+    // autofocus on the textfield after the user clicks on a button, called in the HTML arrow key and crush button codes
+    function autoFocus() {
+        document.getElementById("MoveText").focus();
+    }
+
+    // clear the textfield, called in button event handler
+    function clearText() {
+        document.getElementById("MoveText").value = "";
+    }
+
+</script>
+
+</head>
+
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- https://getbootstrap.com/docs/4.0/layout/grid/ for the col-xl-3 stuff -->
+        <div class="col-xl-3 col-md-12 col-sm-12" id="firstColumn">
+            <div>
+                <div id="title"> <b>Candy Crush</b> </div>
+                <input id="newGameButton"
+                       type="button"
+                       value="New Game"
+                       class="btn"
+                       onclick="autoFocus()">
+
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-12 col-sm-12" id="mainColumn">
+            <table id="tableGrid">
+            </table>
+        </div>
+
+        <div class="col-xl-3 col-md-12 col-sm-12" id="lastColumn">
+
+            <div>
+                <label for="MoveLabel"><b>Move:</b></label>
+                <form>
+                    <!-- https://www.w3schools.com/tags/att_input_maxlength.asp for maxlength
+                         https://www.w3schools.com/jsref/event_oninput.asp for oninput -->
+                    <input type="text" name="textField" maxlength="2" id="MoveText" oninput="enableButtons()" autofocus>
+                </form>
+                <!-- https://stackoverflow.com/questions/49475935/on-button-click-focus-input-in-javascript/49475954
+                 added onclick and created an autofocus function, did similarly for other buttons -->
+                <input id="up"
+                       type="button"
+                       value="&uarr;"
+                       style="font-weight:bold;"
+                       class="btn"
+                       onclick="autoFocus()">
+
+                <input id="down"
+                       type="button"
+                       value="&darr;"
+                       style="font-weight:bold;"
+                       class="btn"
+                       onclick="autoFocus()">
+
+                <input id="left"
+                       type="button"
+                       value="&larr;"
+                       style="font-weight:bold;"
+                       class="btn"
+                       onclick="autoFocus()">
+
+                <input id="right"
+                       type="button"
+                       value="&rarr;"
+                       style="font-weight:bold;"
+                       class="btn"
+                       onclick="autoFocus()">
+
+                <input id="crush"
+                       type="button"
+                       value="Crush Once"
+                       style="font-weight:bold;"
+                       class="btn"
+                       onclick="autoFocus()">
+
+            </div>
+
+        </div>
+    </div> <!-- class="row" -->
+</div> <!-- class="container" -->
+
+</body>
+
+</html>
